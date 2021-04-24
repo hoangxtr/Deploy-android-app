@@ -10,6 +10,8 @@ import android.widget.Button;
 
 import org.opencv.android.OpenCVLoader;
 
+import java.io.IOException;
+
 public class MainActivity extends AppCompatActivity {
     static {
         if(OpenCVLoader.initDebug()){
@@ -19,8 +21,9 @@ public class MainActivity extends AppCompatActivity {
             Log.d("MainActivity: ","Opencv failed to load");
         }
     }
-
+    String TAG = "MAIN_ACTIVITY";
     private Button camera_button;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -21,6 +21,8 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.IOException;
+
 public class CameraActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2{
     private static final String TAG="MainActivity";
 
@@ -46,6 +48,8 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         }
     };
 
+    private ObjectDetectorClass objectDetectorClass;
+
     public CameraActivity(){
         Log.i(TAG,"Instantiated new "+this.getClass());
     }
@@ -68,6 +72,14 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         mOpenCvCameraView=(CameraBridgeViewBase) findViewById(R.id.frame_Surface);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
+
+        try {
+            objectDetectorClass = new ObjectDetectorClass(getAssets(), "best-fp16.tflite", 640);
+            Log.wtf(TAG, "tflite load success");
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.wtf(TAG, "tflite load failed");
+        }
 
     }
 
@@ -112,6 +124,10 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame){
         mRgba=inputFrame.rgba();
         mGray=inputFrame.gray();
+
+        // recognize image
+        Mat out = new Mat();
+        out = objectDetectorClass.recognizeImage(mRgba);
 
         return mRgba;
 
