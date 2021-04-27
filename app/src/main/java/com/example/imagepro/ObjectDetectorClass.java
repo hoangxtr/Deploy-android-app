@@ -10,11 +10,15 @@ import android.util.Log;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.GpuDelegate;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -56,10 +60,10 @@ public class ObjectDetectorClass {
     }
 
     public Mat recognizeImage(Mat mat_image){
-        INPUT_SIZE = 640;
         // Rotate image 90 degree
-        Mat rotated_mat_image = new Mat();
-        Core.flip(mat_image.t(), rotated_mat_image, 1);
+//        Mat rotated_mat_image = new Mat();
+        Mat rotated_mat_image = mat_image;
+//        Core.flip(mat_image.t(), rotated_mat_image, 1);
 
         // Convert to bitmap
         Bitmap bitmap = null;
@@ -89,30 +93,51 @@ public class ObjectDetectorClass {
         float[][] scores = new float[1][10];
         float[][] classes = new float[1][10];
 
-//        output_map.put(0, boxes);
-//        output_map.put(1, classes);
-//        output_map.put(2, scores);
+        output_map.put(0, boxes);
+        output_map.put(1, classes);
+        output_map.put(2, scores);
 
         // * My own output
-        float [][][] output = new float[1][25200][33];
+//        float [][][] output = new float[1][25200][33];
 
-        output_map.put(0, output);
+        output_map.put(0, boxes);
+        output_map.put(1, classes);
+        output_map.put(2, scores);
 
-//        Log.wtf("MainActivity", "Run den day");
+        Log.wtf("MainActivity", "Run den day");
 
         long startTime = SystemClock.uptimeMillis();
 
         interpreter.runForMultipleInputsOutputs(input, output_map);
 
-//        Log.wtf("MainActivity", "Run qua day");
+        Log.wtf("MainActivity", "Run qua day");
         Log.wtf("EstimateTime", Long.toString(SystemClock.uptimeMillis() - startTime));
 
         // * Postprocess output:
 //        postProcess(output[0]);
 
+        Object value = output_map.get(0);
+        Object object_classes = output_map.get(1);
+        Object object_scores = output_map.get(2);
+
+        for (int i = 0; i < 10; i ++){
+            float classValue = (float) Array.get(Array.get(object_classes, 0), i);
+            float scoreValue = (float) Array.get(Array.get(object_scores, 0), i);
+            if (scoreValue > 0.3){
+                Object box1 = Array.get(Array.get(value, 0), i);
+                float y1 = (float) Array.get(box1, 0) * height;
+                float x1 = (float) Array.get(box1, 1) * width;
+                float y2 = (float) Array.get(box1, 2) * height;
+                float x2 = (float) Array.get(box1, 3) * width;
+
+                Imgproc.rectangle(rotated_mat_image, new Point(x1,y1), new Point(x2,y2), new Scalar(255,0,0), 2);
+//                Imgproc.putText(rotated_mat_image, labelList.get((int)classValue), new Point(x1,y1), 3, 1, new Scalar(100, 100, 100), 2);
+            }
+        }
+
 
         // return back by -90 degree before return
-        Core.flip(rotated_mat_image.t(), mat_image, 0);
+//        Core.flip(rotated_mat_image.t(), mat_image, 0);
         return mat_image;
     }
 
@@ -121,7 +146,6 @@ public class ObjectDetectorClass {
     }
 
     private ByteBuffer convertBitmapToByteBuffer(Bitmap scaledBitmap) {
-        INPUT_SIZE = 640;
         ByteBuffer byteBuffer;
         int quant = 1;
         int sizeImage = INPUT_SIZE;

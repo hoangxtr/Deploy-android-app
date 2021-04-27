@@ -29,6 +29,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     private Mat mRgba;
     private Mat mGray;
     private CameraBridgeViewBase mOpenCvCameraView;
+    private boolean isRecog = false;
     private BaseLoaderCallback mLoaderCallback =new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -74,7 +75,7 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
         mOpenCvCameraView.setCvCameraViewListener(this);
 
         try {
-            objectDetectorClass = new ObjectDetectorClass(getAssets(), "best-fp16.tflite", 640);
+            objectDetectorClass = new ObjectDetectorClass(getAssets(), "model_metadata.tflite", 640);
             Log.wtf(TAG, "tflite load success");
         } catch (IOException e) {
             e.printStackTrace();
@@ -124,10 +125,12 @@ public class CameraActivity extends Activity implements CameraBridgeViewBase.CvC
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame){
         mRgba=inputFrame.rgba();
         mGray=inputFrame.gray();
+        Mat out = mRgba.clone();
 
         // recognize image
-        Mat out = new Mat();
-        out = objectDetectorClass.recognizeImage(mRgba);
+//        if (isRecog == true) {
+//            objectDetectorClass.recognizeImage(out);
+//        }
 
         return mRgba;
 
